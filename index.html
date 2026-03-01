@@ -22,13 +22,10 @@
             let parts = data.split(",");
             let rawAngle = parseInt(parts[0]);
             
-            // --- THE FIX: INVERTING THE ANGLE ---
-            // Maps incoming 30-160 to 160-30 on the dashboard
             displayAngle = map(rawAngle, 30, 160, 160, 30);
             
             distance = parseInt(parts[1]);
             
-            // Update the text display
             document.getElementById('angleDisplay').innerText = `ANGLE: ${rawAngle}°`;
         });
 
@@ -38,13 +35,13 @@
         }
 
         function draw() {
-            fill(0, 15); // Radar trail effect
+            fill(0, 15); 
             noStroke();
             rect(0, 0, width, height);
             
             translate(width / 2, height - 100);
             
-            // Draw Radar Grids (Green semi-circles)
+
             stroke(0, 100, 0);
             strokeWeight(1);
             noFill();
@@ -52,13 +49,11 @@
                 arc(0, 0, (width * 0.8) * (r/4), (width * 0.8) * (r/4), 180, 360);
             }
 
-            // Draw Sweeping Line (using fixed displayAngle)
             stroke(0, 255, 0);
             strokeWeight(3);
             let lineLength = width * 0.4;
             line(0, 0, lineLength * cos(180 + displayAngle), lineLength * sin(180 + displayAngle));
 
-            // Draw Target (Red Dot)
             if (distance > 0 && distance < 40) {
                 let dMapped = map(distance, 0, 40, 0, lineLength);
                 fill(255, 0, 0);
