@@ -6,19 +6,30 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { background: #000; margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace; }
-        #info { position: absolute; top: 10px; left: 10px; color: #0f0; font-size: 18px; }
+        #info { position: absolute; top: 10px; left: 10px; color: #0f0; font-size: 18px; line-height: 1.5; }
     </style>
 </head>
 <body>
-    <div id="info">STATUS: SCANNING...</div>
+    <div id="info">
+        STATUS: SCANNING...<br>
+        <span id="angleDisplay">ANGLE: 0°</span>
+    </div>
     <script>
         const socket = io();
-        let angle = 0, distance = 0;
+        let displayAngle = 0, distance = 0;
 
         socket.on('radarData', (data) => {
             let parts = data.split(",");
-            angle = parseInt(parts[0]);
+            let rawAngle = parseInt(parts[0]);
+            
+            // --- THE FIX: INVERTING THE ANGLE ---
+            // Maps incoming 30-160 to 160-30 on the dashboard
+            displayAngle = map(rawAngle, 30, 160, 160, 30);
+            
             distance = parseInt(parts[1]);
+            
+            // Update the text display
+            document.getElementById('angleDisplay').innerText = `ANGLE: ${rawAngle}°`;
         });
 
         function setup() {
@@ -27,32 +38,37 @@
         }
 
         function draw() {
-            fill(0, 15); // Trail effect
+            fill(0, 15); // Radar trail effect
             noStroke();
             rect(0, 0, width, height);
             
             translate(width / 2, height - 100);
             
-            // Draw Radar Grids
+            // Draw Radar Grids (Green semi-circles)
             stroke(0, 100, 0);
+            strokeWeight(1);
             noFill();
             for (let r = 1; r <= 4; r++) {
                 arc(0, 0, (width * 0.8) * (r/4), (width * 0.8) * (r/4), 180, 360);
             }
 
-            // Draw Sweeping Line
+            // Draw Sweeping Line (using fixed displayAngle)
             stroke(0, 255, 0);
             strokeWeight(3);
             let lineLength = width * 0.4;
-            line(0, 0, lineLength * cos(180 + angle), lineLength * sin(180 + angle));
+            line(0, 0, lineLength * cos(180 + displayAngle), lineLength * sin(180 + displayAngle));
 
             // Draw Target (Red Dot)
             if (distance > 0 && distance < 40) {
                 let dMapped = map(distance, 0, 40, 0, lineLength);
                 fill(255, 0, 0);
                 noStroke();
-                circle(dMapped * cos(180 + angle), dMapped * sin(180 + angle), 12);
+                circle(dMapped * cos(180 + displayAngle), dMapped * sin(180 + displayAngle), 12);
             }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
         }
     </script>
 </body>
