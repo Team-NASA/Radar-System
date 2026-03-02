@@ -6,36 +6,14 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { background: #000; margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace; }
-        
-        #info { 
-            position: absolute; top: 20px; left: 20px; color: #0f0; 
-            font-size: 20px; line-height: 1.6; z-index: 10; 
-            text-shadow: 2px 2px 2px #000; pointer-events: none;
-        }
-
-        #logContainer {
-            position: absolute; right: 20px; top: 20px; width: 220px;
-            background: rgba(40, 0, 0, 0.6); border: 1px solid #f00;
-            color: #f00; padding: 10px; display: none; max-height: 400px;
-            overflow-y: hidden; z-index: 20; font-size: 14px;
-            box-shadow: 0 0 10px rgba(255,0,0,0.3);
-        }
-
-        #logToggle {
-            position: absolute; right: 20px; bottom: 20px;
-            background: #220000; color: #f00; border: 1px solid #f00;
-            padding: 10px 20px; cursor: pointer; font-family: monospace;
-            z-index: 30; transition: 0.3s;
-        }
-
-        #logToggle:hover { background: #440000; color: #fff; }
-
+        #info { position: absolute; top: 20px; left: 20px; color: #0f0; font-size: 20px; line-height: 1.6; z-index: 10; text-shadow: 2px 2px 2px #000; pointer-events: none; }
+        #logContainer { position: absolute; right: 20px; top: 20px; width: 220px; background: rgba(40, 0, 0, 0.6); border: 1px solid #f00; color: #f00; padding: 10px; display: none; max-height: 400px; overflow-y: hidden; z-index: 20; font-size: 14px; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+        #logToggle { position: absolute; right: 20px; bottom: 20px; background: #220000; color: #f00; border: 1px solid #f00; padding: 10px 20px; cursor: pointer; font-family: monospace; z-index: 30; }
         .glitch { animation: blink 2s infinite; font-weight: bold; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
-
     <div id="info">
         <span class="glitch">▶ SYSTEM: OPERATIONAL</span><br>
         <span id="angleDisplay">BEARING: 030°</span><br>
@@ -57,21 +35,17 @@
         socket.on('radarData', (data) => {
             let parts = data.split(",");
             currentRaw = parseInt(parts[0]);
+            // Reverted mapping for inverted mounting
             displayAngle = map(currentRaw, 30, 160, 160, 30);
             distance = parseInt(parts[1]);
 
-            // 1. ALWAYS UPDATE HUD (Top Left)
             document.getElementById('angleDisplay').innerText = `BEARING: ${currentRaw.toString().padStart(3, '0')}°`;
             document.getElementById('distDisplay').innerText = `RANGE: ${distance.toString().padStart(3, '0')}cm`;
 
-            // 2. ONLY LOG IF UNDER DETECTION RANGE (e.g. 20cm)
             if (distance > 0 && distance < 20) {
                 let timestamp = new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' });
                 detectionEvents.unshift(`[${timestamp}] AT ${currentRaw}° - ${distance}cm`);
-                
-                // Keep only last 15 detections to avoid clutter
                 if (detectionEvents.length > 15) detectionEvents.pop();
-                
                 document.getElementById('logContent').innerHTML = detectionEvents.join("<br>");
             }
         });
@@ -90,29 +64,23 @@
             fill(0, 15); 
             noStroke();
             rect(0, 0, width, height);
-            
             translate(width / 2, height - 100);
             let lineLength = width * 0.42;
 
-            // BACKGROUND GRID
-            strokeWeight(1);
             stroke(0, 50, 0); 
             noFill();
             for (let r = 1; r <= 5; r++) {
                 arc(0, 0, (width * 0.85) * (r/5), (width * 0.85) * (r/5), 180, 360);
             }
 
-            // ACTIVE ZONE
             stroke(0, 120, 0, 80);
             fill(0, 255, 0, 5);
             arc(0, 0, width * 0.85, width * 0.85, 180 + 30, 180 + 160, PIE);
 
-            // SCANNER
             stroke(0, 255, 0);
             strokeWeight(4);
             line(0, 0, lineLength * cos(180 + displayAngle), lineLength * sin(180 + displayAngle));
             
-            // TARGET
             if (distance > 0 && distance < 40) {
                 let dMapped = map(distance, 0, 40, 0, lineLength);
                 fill(255, 0, 0, 180);
