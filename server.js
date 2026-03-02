@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 // --- WIRED CONFIGURATION ---
-const wiredPort = 'COM12'; 
+const wiredPort = 'COM10'; 
 const baudRate = 9600; 
 
 const port = new SerialPort({ 
