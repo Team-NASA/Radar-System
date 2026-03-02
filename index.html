@@ -28,7 +28,7 @@
     <button id="logToggle" onclick="toggleLog()">TOGGLE EVENT LOG</button>
 
     <script>
-        const socket = io();
+        const socket = io(`10.19.254.182:3000`);
         let displayAngle = 30, distance = 0, currentRaw = 30;
         let detectionEvents = [];
 
