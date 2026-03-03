@@ -29,7 +29,9 @@ void scan(int angle) {
   
   int distance = getDistance();
   
-  if (distance < 55 && distance > 0) {
+  // --- FULL ALARM LOGIC ---
+  if (distance < 60 && distance > 0) {
+    // TARGET DETECTED
     digitalWrite(greenLed, LOW); 
     digitalWrite(redLed, HIGH);  
     digitalWrite(buzzerPin, HIGH);
