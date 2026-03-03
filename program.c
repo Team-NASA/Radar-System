@@ -29,21 +29,18 @@ void scan(int angle) {
   
   int distance = getDistance();
   
-  // --- FULL ALARM LOGIC ---
-  if (distance < 20 && distance > 0) {
-    // TARGET DETECTED
+  if (distance < 55 && distance > 0) {
     digitalWrite(greenLed, LOW); 
     digitalWrite(redLed, HIGH);  
     digitalWrite(buzzerPin, HIGH);
     delay(10); 
     digitalWrite(buzzerPin, LOW);
   } else {
-    // AREA CLEAR
     digitalWrite(greenLed, HIGH); 
     digitalWrite(redLed, LOW);   
+    digitalWrite(buzzerPin, LOW);
   }
 
-  // Send to Node.js Dashboard
   Serial.print(angle);
   Serial.print(",");
   Serial.println(distance);
@@ -55,8 +52,10 @@ int getDistance() {
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH, 30000); 
+  
+  long duration = pulseIn(echoPin, HIGH, 40000); 
   int d = duration * 0.034 / 2;
-  if (d > 40 || d <= 0) return 40; 
+  
+  if (d > 60 || d <= 0) return 60; 
   return d;
 }

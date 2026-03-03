@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Military Radar Interface</title>
+    <title>Radar Interface</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
@@ -16,7 +16,7 @@
 <body>
     <div id="info">
         <span class="glitch">▶ SYSTEM: OPERATIONAL</span><br>
-        <span id="angleDisplay">BEARING: 030°</span><br>
+        <span id="angleDisplay">Angle: 030°</span><br>
         <span id="distDisplay">RANGE: 000cm</span>
     </div>
 
@@ -28,14 +28,13 @@
     <button id="logToggle" onclick="toggleLog()">TOGGLE EVENT LOG</button>
 
     <script>
-        const socket = io();
+        const socket = io(`10.19.254.182:3000`);
         let displayAngle = 30, distance = 0, currentRaw = 30;
         let detectionEvents = [];
 
         socket.on('radarData', (data) => {
             let parts = data.split(",");
             currentRaw = parseInt(parts[0]);
-            // Reverted mapping for inverted mounting
             displayAngle = map(currentRaw, 30, 160, 160, 30);
             distance = parseInt(parts[1]);
 
@@ -81,8 +80,8 @@
             strokeWeight(4);
             line(0, 0, lineLength * cos(180 + displayAngle), lineLength * sin(180 + displayAngle));
             
-            if (distance > 0 && distance < 40) {
-                let dMapped = map(distance, 0, 40, 0, lineLength);
+            if (distance > 0 && distance < 60) {
+                let dMapped = map(distance, 0, 60, 0, lineLength);
                 fill(255, 0, 0, 180);
                 noStroke();
                 circle(dMapped * cos(180 + displayAngle), dMapped * sin(180 + displayAngle), 18);
