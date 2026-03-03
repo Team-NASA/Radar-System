@@ -30,7 +30,7 @@ void scan(int angle) {
   int distance = getDistance();
   
   // --- FULL ALARM LOGIC ---
-  if (distance < 20 && distance > 0) {
+  if (distance < 60 && distance > 0) {
     // TARGET DETECTED
     digitalWrite(greenLed, LOW); 
     digitalWrite(redLed, HIGH);  
