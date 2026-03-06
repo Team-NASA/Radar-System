@@ -1,51 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Radar Interface</title>
+    <title>G1-Strategic Radar Interface</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body { background: #000; margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace; }
-        #info { position: absolute; top: 20px; left: 20px; color: #0f0; font-size: 20px; line-height: 1.6; z-index: 10; text-shadow: 2px 2px 2px #000; pointer-events: none; }
-        #logContainer { position: absolute; right: 20px; top: 20px; width: 220px; background: rgba(40, 0, 0, 0.6); border: 1px solid #f00; color: #f00; padding: 10px; display: none; max-height: 400px; overflow-y: hidden; z-index: 20; font-size: 14px; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
-        #logToggle { position: absolute; right: 20px; bottom: 20px; background: #220000; color: #f00; border: 1px solid #f00; padding: 10px 20px; cursor: pointer; font-family: monospace; z-index: 30; }
+        
+        #info { 
+            position: absolute; top: 20px; left: 20px; color: #0f0; 
+            font-size: 20px; line-height: 1.6; z-index: 10; 
+            text-shadow: 2px 2px 2px #000; pointer-events: none;
+        }
+
+        #logContainer {
+            position: absolute; right: 20px; top: 20px; width: 250px;
+            background: rgba(40, 0, 0, 0.6); border: 1px solid #f00;
+            color: #f00; padding: 10px; display: none; max-height: 400px;
+            overflow-y: hidden; z-index: 20; font-size: 14px;
+            box-shadow: 0 0 10px rgba(255,0,0,0.3);
+        }
+
+        #logToggle {
+            position: absolute; right: 20px; bottom: 20px;
+            background: #220000; color: #f00; border: 1px solid #f00;
+            padding: 10px 20px; cursor: pointer; font-family: monospace;
+            z-index: 30; transition: 0.3s;
+        }
+        #logToggle:hover { background: #440000; }
+
         .glitch { animation: blink 2s infinite; font-weight: bold; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        
+        .status-secure { color: #0f0; }
+        .status-danger { color: #f00; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="info">
         <span class="glitch">▶ SYSTEM: OPERATIONAL</span><br>
-        <span id="angleDisplay">Angle: 030°</span><br>
+        <span id="statusDisplay" class="status-secure">STATUS: SECURE</span><br>
+        <span id="angleDisplay">BEARING: 030°</span><br>
         <span id="distDisplay">RANGE: 000cm</span>
     </div>
 
     <div id="logContainer">
-        <div style="border-bottom: 1px solid #f00; padding-bottom: 5px; margin-bottom: 10px; font-weight:bold;">⚠️ DETECTION LOG</div>
-        <div id="logContent">No targets detected...</div>
+        <div style="border-bottom: 1px solid #f00; padding-bottom: 5px; margin-bottom: 10px; font-weight:bold;">⚠️ SECURITY EVENT LOG</div>
+        <div id="logContent">Scanning for targets...</div>
     </div>
 
     <button id="logToggle" onclick="toggleLog()">TOGGLE EVENT LOG</button>
 
     <script>
-        const socket = io(`10.19.254.182:3000`);
-        let displayAngle = 30, distance = 0, currentRaw = 30;
+        const socket = io("10.42.63.182:3000"); 
+        let displayAngle = 30;
+        let distance = 0;
+        let currentRaw = 30;
         let detectionEvents = [];
 
         socket.on('radarData', (data) => {
             let parts = data.split(",");
             currentRaw = parseInt(parts[0]);
+            
+            // Software Calibration: Inverted mapping for tower mounting
             displayAngle = map(currentRaw, 30, 160, 160, 30);
             distance = parseInt(parts[1]);
 
+            // Update HUD
             document.getElementById('angleDisplay').innerText = `BEARING: ${currentRaw.toString().padStart(3, '0')}°`;
             document.getElementById('distDisplay').innerText = `RANGE: ${distance.toString().padStart(3, '0')}cm`;
 
-            if (distance > 0 && distance < 20) {
+            // Detection Logic (Synced to 55cm threshold)
+            const statusEl = document.getElementById('statusDisplay');
+            if (distance > 0 && distance < 55) {
+                statusEl.innerText = "STATUS: INTRUSION DETECTED";
+                statusEl.className = "status-danger";
+                
                 let timestamp = new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' });
-                detectionEvents.unshift(`[${timestamp}] AT ${currentRaw}° - ${distance}cm`);
+                detectionEvents.unshift(`[${timestamp}] ${currentRaw}° | ${distance}cm`);
+                
                 if (detectionEvents.length > 15) detectionEvents.pop();
                 document.getElementById('logContent').innerHTML = detectionEvents.join("<br>");
+            } else {
+                statusEl.innerText = "STATUS: SECURE";
+                statusEl.className = "status-secure";
             }
         });
 
@@ -60,31 +98,42 @@
         }
 
         function draw() {
+            // Motion Blur Effect
             fill(0, 15); 
             noStroke();
             rect(0, 0, width, height);
+            
             translate(width / 2, height - 100);
             let lineLength = width * 0.42;
 
+            // BACKGROUND RADAR GRID
+            strokeWeight(1);
             stroke(0, 50, 0); 
             noFill();
             for (let r = 1; r <= 5; r++) {
                 arc(0, 0, (width * 0.85) * (r/5), (width * 0.85) * (r/5), 180, 360);
             }
 
+            // ACTIVE SCAN SECTOR (30-160)
             stroke(0, 120, 0, 80);
             fill(0, 255, 0, 5);
             arc(0, 0, width * 0.85, width * 0.85, 180 + 30, 180 + 160, PIE);
 
+            // SWEEPING SCANNER LINE
             stroke(0, 255, 0);
             strokeWeight(4);
             line(0, 0, lineLength * cos(180 + displayAngle), lineLength * sin(180 + displayAngle));
             
+            // DYNAMIC TARGET PLOTTING (Mapped to 60cm max)
             if (distance > 0 && distance < 60) {
                 let dMapped = map(distance, 0, 60, 0, lineLength);
-                fill(255, 0, 0, 180);
+                
+                // Target Glow
+                fill(255, 0, 0, 150);
                 noStroke();
-                circle(dMapped * cos(180 + displayAngle), dMapped * sin(180 + displayAngle), 18);
+                circle(dMapped * cos(180 + displayAngle), dMapped * sin(180 + displayAngle), 20);
+                
+                // Target Core
                 fill(255, 255, 255);
                 circle(dMapped * cos(180 + displayAngle), dMapped * sin(180 + displayAngle), 6);
             }
