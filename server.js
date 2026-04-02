@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-const wiredPort = 'COM05'; 
+const wiredPort = 'COM5'; 
 const baudRate = 9600; 
 
 const port = new SerialPort({ 
